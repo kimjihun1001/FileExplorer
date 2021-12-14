@@ -7,6 +7,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <ScrollViewer Height="295" HorizontalAlignment="Left" Name="scrollViewer1" VerticalAlignment="Top" Width="116" Margin="635,10,0,0">
+            <TreeView Height="294" Name="tvlist" Width="101" />
+        </ScrollViewer>
     </Grid>
 </Window>

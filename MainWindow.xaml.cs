@@ -26,6 +26,7 @@ namespace FileExplorer
         {
             InitializeComponent();
             GetDrives();
+
         }
 
         private void GetDrives() //드라이브 검색
@@ -46,9 +47,13 @@ namespace FileExplorer
 
 
                     // 이게 위의 Di랑 다른 건가??
+                    // A. 같은거임
                     DirectoryInfo baseDi = new DirectoryInfo(Di.FullName); //경로 받아오기
                     DirectoryInfo[] childrenDI = baseDi.GetDirectories(); //경로안에 디렉토리 모두 알려주기
+                    Console.WriteLine("Hello");
+
                     // 이건 왜 foreach 아니고 for??
+                    // A. 상관없음
                     for (int i = 0; i < childrenDI.Length; i++)
                     {  //폴더
                         if ((childrenDI[i].Attributes & FileAttributes.Hidden) != FileAttributes.Hidden) //숨겨진 파일 아닌것만
@@ -57,7 +62,10 @@ namespace FileExplorer
                             subItem.Header = childrenDI[i].Name;
                             subItem.Tag = childrenDI[i].FullName;
                             subItem.ToolTip = childrenDI[i].Name;
+                            Console.WriteLine("1" + childrenDI[i].Name + "2" + childrenDI[i].FullName);
+
                             driveitem.Items.Add(subItem);
+                            MakeTvlist(subItem);
                         }
                     }
 
@@ -66,5 +74,26 @@ namespace FileExplorer
                 }
             }
         }
+
+        private void MakeTvlist(TreeViewItem directoryItem) //하위 디렉토리 찾고, 트리뷰에 넣기
+        {
+            DirectoryInfo baseDi = new DirectoryInfo((directoryItem.Tag).ToString()); //경로 받아오기
+            DirectoryInfo[] childrenDI = baseDi.GetDirectories(); //경로안에 디렉토리 모두 알려주기
+
+            for (int i = 0; i < childrenDI.Length; i++)
+            {  //폴더
+                if ((childrenDI[i].Attributes & FileAttributes.Hidden) != FileAttributes.Hidden) //숨겨진 파일 아닌것만
+                {
+                    TreeViewItem subItem = new TreeViewItem(); //자식들 추가
+                    subItem.Header = childrenDI[i].Name;
+                    subItem.Tag = childrenDI[i].FullName;
+                    subItem.ToolTip = childrenDI[i].Name;
+                    directoryItem.Items.Add(subItem);
+                    MakeTvlist(subItem);
+
+                }
+            }
+        }
+
     }
 }

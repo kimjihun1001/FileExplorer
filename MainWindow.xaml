@@ -7,10 +7,19 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <ScrollViewer Height="300" HorizontalAlignment="Left" Name="scrollViewer1" VerticalAlignment="Top" Width="150" Margin="32,99,0,0">
-            <TreeView x:Name="tvlist" Width="131">
-                
-            </TreeView>
-        </ScrollViewer>
+        <TreeView x:Name="tvlist" Height="300" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150" Margin="32,99,0,0">
+
+        </TreeView>
+        <ListBox x:Name="lblist" HorizontalAlignment="Left" Height="300" Margin="223,99,0,0" VerticalAlignment="Top" Width="500">
+            <ListBoxItem Height="20">
+                <Span>
+                    <Image Height="20" Width="20"></Image>
+                    <TextBlock x:Name="fileName" Width="250" FontSize="15" Text="name"></TextBlock>
+                    <TextBlock Width="100" Text="date"></TextBlock>
+                    <TextBlock Width="100" Text="size"></TextBlock>
+                </Span>
+            </ListBoxItem>
+        </ListBox>
+
     </Grid>
 </Window>

@@ -22,11 +22,11 @@ namespace FileExplorer
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static Stack<DirectoryInfo> directoryInfo = new Stack<DirectoryInfo>();
         public MainWindow()
         {
             InitializeComponent();
             GetDrives();
-
         }
 
         private void GetDrives() //드라이브 검색
@@ -39,12 +39,10 @@ namespace FileExplorer
                 TreeViewItem driveitem = new TreeViewItem();//자식들을 추가해주려고
                 if (drive.IsReady == true) // 드라이브가 준비되었으면
                 {
-                     
                     Di = new DirectoryInfo(drive.Name); //경로정보 갖고오기
                     driveitem.Header = drive.Name;//제일처음에 보이는거
                     driveitem.Tag = Di.FullName;//전체경로를 테그에 넣고 
                     driveitem.ToolTip = drive.Name;//마우스 위에 올려놓았을때 보이는거
-
 
                     // 이게 위의 Di랑 다른 건가??
                     // A. 같은거임
@@ -62,10 +60,9 @@ namespace FileExplorer
                             subItem.Header = childrenDI[i].Name;
                             subItem.Tag = childrenDI[i].FullName;
                             subItem.ToolTip = childrenDI[i].Name;
-                            Console.WriteLine("1" + childrenDI[i].Name + "2" + childrenDI[i].FullName);
-
+                            subItem.Expanded += ShowDirectory;
+                            // subItem.MouseLeftButtonUp += ShowDirectory;
                             driveitem.Items.Add(subItem);
-                            MakeTvlist(subItem);
                         }
                     }
 
@@ -75,25 +72,103 @@ namespace FileExplorer
             }
         }
 
-        private void MakeTvlist(TreeViewItem directoryItem) //하위 디렉토리 찾고, 트리뷰에 넣기
+        private ImageSource GetFileImage(string filePath)
         {
-            DirectoryInfo baseDi = new DirectoryInfo((directoryItem.Tag).ToString()); //경로 받아오기
-            DirectoryInfo[] childrenDI = baseDi.GetDirectories(); //경로안에 디렉토리 모두 알려주기
+            // 얘 왜 그냥 Icon.Extract~하면 안뜨지??
+            Icon icon = System.Drawing.Icon.ExtractAssociatedIcon(filePath);
+            ImageSource imageSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle, System.Windows.Int32Rect.Empty, System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+            return imageSource;
+        }
 
-            for (int i = 0; i < childrenDI.Length; i++)
-            {  //폴더
-                if ((childrenDI[i].Attributes & FileAttributes.Hidden) != FileAttributes.Hidden) //숨겨진 파일 아닌것만
+        // 클릭 이벤트
+        private void ShowDirectory(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender.GetType() == typeof(TreeViewItem))
                 {
-                    TreeViewItem subItem = new TreeViewItem(); //자식들 추가
-                    subItem.Header = childrenDI[i].Name;
-                    subItem.Tag = childrenDI[i].FullName;
-                    subItem.ToolTip = childrenDI[i].Name;
-                    directoryItem.Items.Add(subItem);
-                    MakeTvlist(subItem);
+                    TreeViewItem directoryItem = (TreeViewItem)sender;
+                    DirectoryInfo directoryInfo = new DirectoryInfo((directoryItem.Tag).ToString());   // 경로 받아오기
+
+                    // treeview에 추가
+                    directoryItem.Items.Clear();    // 기존에 있던 하위 아이템 제거
+                    DirectoryInfo[] childrenDirectoryInfo = directoryInfo.GetDirectories(); //경로 하위 디렉토리 받아오기
+
+                    foreach (DirectoryInfo childDirectoryInfo in childrenDirectoryInfo)
+                    {
+                        if ((childDirectoryInfo.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden) //숨겨진 파일 아닌것만
+                        {
+                            directoryItem.Items.Add(MakeChildDirectory_treeViewItem(childDirectoryInfo));
+                            MakeChildDirectory_ListBoxItem(childDirectoryInfo);
+                        }
+                    }
+
+                    //string[] files = Directory.GetFiles(baseDi.FullName, "*");
+
+                    //foreach (string file in files)
+                    //{
+                    //    ListBoxItem listBoxItem;
+                    //    GetFileImage(file);
+
+                    //}
 
                 }
+                else if (sender.GetType() == typeof(ListBoxItem))
+                {
+                    ListBoxItem directoryItem = (ListBoxItem)sender;
+                    DirectoryInfo directoryInfo = new DirectoryInfo((directoryItem.Tag).ToString());   // 경로 받아오기
+
+                }
+                else
+                {
+                    // 수정필요
+                    ListBoxItem directoryItem = (ListBoxItem)sender;
+                    DirectoryInfo directoryInfo = new DirectoryInfo((directoryItem.Tag).ToString());   // 경로 받아오기
+
+                }
+
+
+                
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
+
+        // TreeViewItem으로 하위 디렉토리 만들기
+        private TreeViewItem MakeChildDirectory_treeViewItem(DirectoryInfo childDirectoryInfo)
+        {
+            TreeViewItem childDirectoryItem_treeViewItem = new TreeViewItem();   // 자식들 추가
+            childDirectoryItem_treeViewItem.Header = childDirectoryInfo.Name;    // 폴더 이름
+            childDirectoryItem_treeViewItem.Tag = childDirectoryInfo.FullName;   // 폴더 경로
+            childDirectoryItem_treeViewItem.ToolTip = childDirectoryInfo.Name;
+            childDirectoryItem_treeViewItem.Expanded += ShowDirectory;
+            // childDirectoryItem_treeViewItem.MouseLeftButtonUp += ShowDirectory;
+
+            return childDirectoryItem_treeViewItem;
+        }
+        // ListBoxItem으로 하위 디렉토리 만들기
+        private ListBoxItem MakeChildDirectory_ListBoxItem(DirectoryInfo childDirectoryInfo)
+        {
+            fileName.Text = childDirectoryInfo.FullName;
+            ListBoxItem childDirectoryItem_ListBoxItem = new ListBoxItem();   // 자식들 추가
+            //Span span = new Span();
+            //System.Windows.Controls.Image image = new System.Windows.Controls.Image();
+            //TextBlock textBlock_FileName = new TextBlock();
+            //textBlock_FileName.Text = childDirectoryInfo.Name;  // 폴더 이름
+            //childDirectoryItem_ListBoxItem.Tag = childDirectoryInfo.FullName;   // 폴더 경로
+            //childDirectoryItem_ListBoxItem.ToolTip = childDirectoryInfo.Name;
+            //childDirectoryItem_ListBoxItem.MouseDoubleClick += ShowDirectory;
+
+
+            //lblist.Items.Add(childDirectoryItem_ListBoxItem);
+
+            return childDirectoryItem_ListBoxItem;
+        }
+
+        private void UpdateState
 
     }
 }

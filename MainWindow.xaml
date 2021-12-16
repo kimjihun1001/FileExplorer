@@ -16,12 +16,17 @@
             </WrapPanel>
         </ScrollViewer>
         <TextBlock x:Name="showNum" HorizontalAlignment="Left" Height="20" Margin="32,404,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="150"/>
-        <ScrollViewer HorizontalAlignment="Left" Height="30" Margin="32,48,0,0" VerticalAlignment="Top" Width="696" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Auto">
-            <WrapPanel x:Name="showPath">
+        <ScrollViewer HorizontalAlignment="Left" Height="30" Margin="107,56,0,0" VerticalAlignment="Top" Width="621" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+            <WrapPanel x:Name="path">
 
             </WrapPanel>
         </ScrollViewer>
-        <TextBox HorizontalAlignment="Left" Height="33" Margin="185,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="425"/>
-        <Button Content="Button" HorizontalAlignment="Left" Height="33" Margin="615,10,0,0" VerticalAlignment="Top" Width="113"/>
+        <TextBox x:Name="searchBox" Padding="0,7,0,0" HorizontalAlignment="Left" Height="33" Margin="185,10,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="425"/>
+        <Button x:Name="searchButton" Content="검색" HorizontalAlignment="Left" Height="33" Margin="615,10,0,0" VerticalAlignment="Top" Width="113" Click="Click_SearchButton"/>
+        <RadioButton x:Name="searchForPath" GroupName="searchOption" Content="경로로 검색" HorizontalAlignment="Left" Height="15" Margin="32,10,0,0" VerticalAlignment="Top" Width="148" IsChecked="True"/>
+        <RadioButton x:Name="searchForName" GroupName="searchOption" Content="이름으로 검색" HorizontalAlignment="Left" Height="15" Margin="32,30,0,0" VerticalAlignment="Top" Width="148"/>
+        <Button x:Name="backward" IsEnabled="False" Click="Click_Backward" Content="뒤" HorizontalAlignment="Left" Height="28" Margin="32,56,0,0" VerticalAlignment="Top" Width="30"/>
+        <Button x:Name="forward" IsEnabled="False" Click="Click_Forward" Content="앞" HorizontalAlignment="Left" Height="28" Margin="70,56,0,0" VerticalAlignment="Top" Width="30"/>
+
     </Grid>
 </Window>

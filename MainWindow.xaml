@@ -5,17 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FileExplorer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="500" Width="800">
     <Grid>
         <TreeView x:Name="nav" Height="300" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150" Margin="32,99,0,0" PreviewMouseLeftButtonUp="Click_TreeViewItem">
 
         </TreeView>
         <ScrollViewer HorizontalAlignment="Left" Height="300" Margin="208,99,0,0" VerticalAlignment="Top" Width="520">
             <WrapPanel Name="screen" Orientation="Horizontal">
-                
+
             </WrapPanel>
         </ScrollViewer>
         <TextBlock x:Name="showNum" HorizontalAlignment="Left" Height="20" Margin="32,404,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="150"/>
+        <ScrollViewer HorizontalAlignment="Left" Height="30" Margin="32,48,0,0" VerticalAlignment="Top" Width="696" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+            <WrapPanel x:Name="showPath">
 
+            </WrapPanel>
+        </ScrollViewer>
+        <TextBox HorizontalAlignment="Left" Height="33" Margin="185,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="425"/>
+        <Button Content="Button" HorizontalAlignment="Left" Height="33" Margin="615,10,0,0" VerticalAlignment="Top" Width="113"/>
     </Grid>
 </Window>

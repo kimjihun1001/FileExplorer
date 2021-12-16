@@ -210,6 +210,40 @@ namespace FileExplorer
 
                 NumOfContents = childrenDI.Length + files.Length;
                 showNum.Text = NumOfContents.ToString() + "개 항목";
+
+                // 경로 표시하기
+                showPath.Children.Clear();
+
+                List<DirectoryInfo> directoryInfoList = new List<DirectoryInfo>();
+                DirectoryInfo directoryInfo1 = new DirectoryInfo(directoryInfo.FullName);
+                directoryInfoList.Add(directoryInfo1);
+
+                while (true)
+                {
+                    if (directoryInfo1.Parent == null)
+                    {
+                        break;
+                    }
+                    else if (directoryInfo1.Parent.Exists == true)
+                    {
+                        directoryInfo1 = directoryInfo1.Parent;
+                        directoryInfoList.Add(directoryInfo1);
+                    }
+                    else
+                        break;
+                }
+
+                directoryInfoList.Reverse();
+
+                foreach (DirectoryInfo directoryInfo2 in directoryInfoList)
+                {
+                    Button button1 = new Button();
+                    button1.Content = directoryInfo2.Name;
+                    button1.Tag = directoryInfo2.FullName;
+                    button1.MouseDoubleClick += DoubleClick_ScreenImage;
+                    showPath.Children.Add(button1);
+                }
+
             }
             catch (Exception ex) 
             {
@@ -285,6 +319,39 @@ namespace FileExplorer
 
                 NumOfContents = childrenDI.Length + files.Length;
                 showNum.Text = NumOfContents.ToString() + "개 항목";
+
+                // 경로 표시하기
+                showPath.Children.Clear();
+
+                List<DirectoryInfo> directoryInfoList = new List<DirectoryInfo>();
+                DirectoryInfo directoryInfo1 = new DirectoryInfo(directoryInfo.FullName);
+                directoryInfoList.Add(directoryInfo1);
+
+                while (true)
+                {
+                    if (directoryInfo1.Parent == null)
+                    {
+                        break;
+                    }
+                    else if (directoryInfo1.Parent.Exists == true)
+                    {
+                        directoryInfo1 = directoryInfo1.Parent;
+                        directoryInfoList.Add(directoryInfo1);
+                    }
+                    else
+                        break;
+                }
+
+                directoryInfoList.Reverse();
+
+                foreach (DirectoryInfo directoryInfo2 in directoryInfoList)
+                {
+                    Button button1 = new Button();
+                    button1.Content = directoryInfo2.Name;
+                    button1.Tag = directoryInfo2.FullName;
+                    button1.MouseDoubleClick += DoubleClick_ScreenImage;
+                    showPath.Children.Add(button1);
+                }
             }
             catch (Exception ex)
             {

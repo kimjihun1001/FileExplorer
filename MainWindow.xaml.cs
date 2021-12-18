@@ -21,17 +21,11 @@ namespace FileExplorer
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static List<TreeViewItem> presentNav = new List<TreeViewItem>();
-        public static List<WrapPanel> presentScreen = new List<WrapPanel>();
-        public static List<Button> presentPath = new List<Button>();
+        public static DirectoryInfo presentDirectoryInfo = null;
 
-        public static Stack<List<TreeViewItem>> backwardStack_Nav = new Stack<List<TreeViewItem>>();
-        public static Stack<List<WrapPanel>> backwardStack_Screen = new Stack<List<WrapPanel>>();
-        public static Stack<List<Button>> backWardStack_Path = new Stack<List<Button>>();
-
-        public static Stack<List<TreeViewItem>> forwardStack_Nav = new Stack<List<TreeViewItem>>();
-        public static Stack<List<WrapPanel>> forwardStack_Screen = new Stack<List<WrapPanel>>();
-        public static Stack<List<Button>> forWardStack_Path = new Stack<List<Button>>();
+        public static Stack<DirectoryInfo> backwardStack = new Stack<DirectoryInfo>();
+        
+        public static Stack<DirectoryInfo> forwardStack = new Stack<DirectoryInfo>();
 
 
         public MainWindow()
@@ -45,44 +39,21 @@ namespace FileExplorer
         {
             try
             {
-                if (presentNav != null)
+                if (presentDirectoryInfo != null)
                 {
-                    forwardStack_Nav.Push(presentNav);
-                }
+                    // 현재 상태를 forwardStack에 저장
+                    forwardStack.Push(presentDirectoryInfo);
 
-                if (presentScreen != null)
-                {
-                    forwardStack_Screen.Push(presentScreen);
-                }
+                    // backwardStack에서 현재 상태 꺼내오기
+                    UpdatePresent(backwardStack.Pop());
 
-                if (presentPath != null)
-                {
-                    forWardStack_Path.Push(presentPath);
-                }
+                    // screen에 폴더, 파일 표시하기
+                    ShowScreen(presentDirectoryInfo);
 
-                presentNav = backwardStack_Nav.Pop();
-                presentScreen = backwardStack_Screen.Pop();
-                presentPath = backWardStack_Path.Pop();
+                    // 경로 표시하기
+                    ShowPath(presentDirectoryInfo);
 
-                nav.Items.Clear();
-                foreach(TreeViewItem treeViewItem in presentNav)
-                {
-                    nav.Items.Add(treeViewItem);
                 }
-
-                screen.Children.Clear();
-                foreach(WrapPanel panel in presentScreen)
-                {
-                    screen.Children.Add(panel);
-                }
-
-                path.Children.Clear();
-                foreach(Button button in presentPath)
-                {
-                    path.Children.Add(button);
-                }
-                
-                CheckStack();
             }
             catch (Exception ex)
             {
@@ -94,41 +65,21 @@ namespace FileExplorer
         {
             try
             {
-                if (presentNav != null)
+                if (presentDirectoryInfo != null)
                 {
-                    backwardStack_Nav.Push(presentNav);
+                    // 현재 상태를 backwardStack에 저장
+                    backwardStack.Push(presentDirectoryInfo);
+
+                    // forwardStack에서 현재 상태 꺼내오기
+                    UpdatePresent(forwardStack.Pop());
+
+                    // screen에 폴더, 파일 표시하기
+                    ShowScreen(presentDirectoryInfo);
+
+                    // 경로 표시하기
+                    ShowPath(presentDirectoryInfo);
+
                 }
-
-                if (presentScreen != null)
-                {
-                    backwardStack_Screen.Push(presentScreen);
-                }
-
-                if (presentPath != null)
-                {
-                    backWardStack_Path.Push(presentPath);
-                }
-
-                presentNav = forwardStack_Nav.Pop();
-                presentScreen = forwardStack_Screen.Pop();
-                presentPath = forWardStack_Path.Pop();
-
-                nav.Items.Clear();
-                nav.Items.Add(presentNav);
-
-                screen.Children.Clear();
-                foreach (WrapPanel panel in presentScreen)
-                {
-                    screen.Children.Add(panel);
-                }
-
-                path.Children.Clear();
-                foreach (Button button in presentPath)
-                {
-                    path.Children.Add(button);
-                }
-
-                CheckStack();
             }
             catch (Exception ex)
             {
@@ -151,6 +102,8 @@ namespace FileExplorer
                     driveitem.Tag = directoryInfo.FullName; //전체경로를 태그에 저장 
                     driveitem.ToolTip = drive.Name; // 마우스 위에 올려놓았을때 보이는거
 
+                    driveitem.PreviewMouseLeftButtonUp += Click_TreeViewItem;
+
                     DirectoryInfo[] childrenDI = directoryInfo.GetDirectories(); // 하위 디렉토리 불러오기
 
                     foreach (DirectoryInfo childDI in childrenDI)
@@ -162,6 +115,8 @@ namespace FileExplorer
                             subItem.Tag = childDI.FullName;
                             subItem.ToolTip = childDI.Name;
                             subItem.Expanded += Expend_TreeViewItem;
+                            subItem.PreviewMouseLeftButtonUp += Click_TreeViewItem;
+
                             MakeDeeperTreeViewItem(subItem);
                             driveitem.Items.Add(subItem);
                         }
@@ -173,7 +128,7 @@ namespace FileExplorer
 
         }
 
-        // nav에 추가
+        // nav에 하위 폴더 추가 이벤트
         private void Expend_TreeViewItem(object sender, RoutedEventArgs e)
         {
             try
@@ -193,6 +148,8 @@ namespace FileExplorer
                         subItem.Tag = childDI.FullName;
                         subItem.ToolTip = childDI.Name;
                         subItem.Expanded += Expend_TreeViewItem;
+                        subItem.PreviewMouseLeftButtonUp += Click_TreeViewItem;
+
                         MakeDeeperTreeViewItem(subItem);
                         treeViewItem.Items.Add(subItem);
 
@@ -230,115 +187,23 @@ namespace FileExplorer
             }
         }
 
-        // scren에 추가
+        // nav에서 폴더 클릭 이벤트
         private void Click_TreeViewItem(object sender, RoutedEventArgs e)
         {
             try
             {                
-                SavePresentState();
+                SavePresent();
 
                 TreeViewItem treeViewItem = (TreeViewItem)e.Source;
                 DirectoryInfo directoryInfo = new DirectoryInfo(treeViewItem.Tag.ToString());
-                DirectoryInfo[] childrenDI = directoryInfo.GetDirectories(); // 하위 디렉토리 불러오기
 
-                screen.Children.Clear();
-                int NumOfContents = 0;
-
-                // 폴더
-                foreach (DirectoryInfo childDI in childrenDI)
-                {
-                    if ((childDI.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)  // 숨겨진 파일 아닌 것만 
-                    {                        
-                        WrapPanel wrapPanel = new WrapPanel();
-                        wrapPanel.Width = 100;
-                        wrapPanel.Height = 100;
-
-                        Button button = new Button();
-                        button.Background = new ImageBrush(new BitmapImage(new Uri("C:\\Users\\kimji\\source\\repos\\FileExplorer\\Asset\\folder.png")));
-                        button.BorderThickness = new Thickness(0);
-                        button.Height = 60;
-                        button.Width = 60;                        
-                        button.Tag = childDI.FullName;
-                        button.MouseDoubleClick += DoubleClick_ScreenImage;
-                        wrapPanel.Children.Add(button);
-
-                        TextBlock textBlock = new TextBlock();
-                        textBlock.Text = childDI.Name;
-                        textBlock.TextWrapping = TextWrapping.Wrap;
-                        textBlock.Width = 90;
-                        wrapPanel.Children.Add(textBlock);
-
-                        screen.Children.Add(wrapPanel);
-
-                    }
-
-                }
-
-                // 파일
-                string[] files = Directory.GetFiles(directoryInfo.FullName, "*");
-                foreach (string file in files)
-                {
-                    WrapPanel wrapPanel = new WrapPanel();
-                    wrapPanel.Width = 100;
-                    wrapPanel.Height = 100;
-
-                    Button button = new Button();
-                    button.Background = new ImageBrush(GetFileImage(file));
-                    button.BorderThickness = new Thickness(0);                    
-                    button.Height = 60;
-                    button.Width = 60;
-                    button.Tag = file;
-                    button.MouseDoubleClick += DoubleClick_ScreenImage_File;
-                    wrapPanel.Children.Add(button);
-
-                    TextBlock textBlock = new TextBlock();
-                    string fileName = (file.Replace(directoryInfo.FullName, "")).Replace("\\", "");  // 파일 전체 경로에서 파일 이름만 따오기
-                    textBlock.Text = fileName;
-                    textBlock.TextWrapping = TextWrapping.Wrap;
-                    textBlock.Width = 90;
-                    wrapPanel.Children.Add(textBlock);
-                    screen.Children.Add(wrapPanel);
-                }
-
-                NumOfContents = childrenDI.Length + files.Length;
-                showNum.Text = NumOfContents.ToString() + "개 항목";
+                // screen에 폴더, 파일 표시하기
+                ShowScreen(directoryInfo);
 
                 // 경로 표시하기
-                path.Children.Clear();
+                ShowPath(directoryInfo);
 
-                List<DirectoryInfo> directoryInfoList = new List<DirectoryInfo>();
-                DirectoryInfo directoryInfo1 = new DirectoryInfo(directoryInfo.FullName);
-                directoryInfoList.Add(directoryInfo1);
-
-                while (true)
-                {
-                    if (directoryInfo1.Parent == null)
-                    {
-                        break;
-                    }
-                    else if (directoryInfo1.Parent.Exists == true)
-                    {
-                        directoryInfo1 = directoryInfo1.Parent;
-                        directoryInfoList.Add(directoryInfo1);
-                    }
-                    else
-                        break;
-                }
-
-                directoryInfoList.Reverse();
-
-                foreach (DirectoryInfo directoryInfo2 in directoryInfoList)
-                {
-                    Button button1 = new Button();
-                    button1.BorderThickness = new Thickness(0);
-                    button1.Padding = new Thickness(5);
-                    button1.Content = directoryInfo2.Name + " >";
-                    button1.Tag = directoryInfo2.FullName;
-                    button1.MouseDoubleClick += DoubleClick_ScreenImage;
-                    path.Children.Add(button1);
-                }
-
-                UpdatePresentState();
+                UpdatePresent(directoryInfo);
 
             }
             catch (Exception ex) 
@@ -347,109 +212,24 @@ namespace FileExplorer
             }
         }
 
-        // Screen에서 파일 클릭 이벤트
+        // Screen에서 폴더 클릭 이벤트
         private void DoubleClick_ScreenImage(object sender, RoutedEventArgs e)
         {
             try
             {
+                SavePresent();
+
                 Button screenImage = (Button)e.Source;
                 DirectoryInfo directoryInfo = new DirectoryInfo(screenImage.Tag.ToString());
-                DirectoryInfo[] childrenDI = directoryInfo.GetDirectories(); // 하위 디렉토리 불러오기
 
-                screen.Children.Clear();
-                int NumOfContents = 0;
-                // 폴더
-                foreach (DirectoryInfo childDI in childrenDI)
-                {
-                    if ((childDI.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)  // 숨겨진 파일 아닌 것만 
-                    {
-                        WrapPanel wrapPanel = new WrapPanel();
-                        wrapPanel.Width = 100;
-                        wrapPanel.Height = 100;
-
-                        Button button = new Button();
-                        button.Background = new ImageBrush(new BitmapImage(new Uri("C:\\Users\\kimji\\source\\repos\\FileExplorer\\Asset\\folder.png")));
-                        button.BorderThickness = new Thickness(0);                    
-                        button.Height = 60;
-                        button.Width = 60;
-                        button.Tag = childDI.FullName;
-                        button.MouseDoubleClick += DoubleClick_ScreenImage;
-                        wrapPanel.Children.Add(button);
-
-                        TextBlock textBlock = new TextBlock();
-                        textBlock.Text = childDI.Name;
-                        textBlock.TextWrapping = TextWrapping.Wrap;
-                        textBlock.Width = 90;
-                        wrapPanel.Children.Add(textBlock);
-
-                        screen.Children.Add(wrapPanel);
-
-                    }
-                }
-
-                // 파일
-                string[] files = Directory.GetFiles(directoryInfo.FullName, "*");
-                foreach (string file in files)
-                {
-                    WrapPanel wrapPanel = new WrapPanel();
-                    wrapPanel.Width = 100;
-                    wrapPanel.Height = 100;
-
-                    Button button = new Button();
-                    button.Background = new ImageBrush(GetFileImage(file));
-                    button.BorderThickness = new Thickness(0);
-                    button.Height = 60;
-                    button.Width = 60;
-                    button.Tag = file;
-                    button.MouseDoubleClick += DoubleClick_ScreenImage_File;
-                    wrapPanel.Children.Add(button);
-
-                    TextBlock textBlock = new TextBlock();
-                    string fileName = (file.Replace(directoryInfo.FullName, "")).Replace("\\", "");  // 파일 전체 경로에서 파일 이름만 따오기
-                    textBlock.Text = fileName;
-                    textBlock.TextWrapping = TextWrapping.Wrap;
-                    textBlock.Width = 90;
-                    wrapPanel.Children.Add(textBlock);
-                    screen.Children.Add(wrapPanel);
-                }
-
-                NumOfContents = childrenDI.Length + files.Length;
-                showNum.Text = NumOfContents.ToString() + "개 항목";
+                // screen에 폴더, 파일 표시하기
+                ShowScreen(directoryInfo);
 
                 // 경로 표시하기
-                path.Children.Clear();
+                ShowPath(directoryInfo);
 
-                List<DirectoryInfo> directoryInfoList = new List<DirectoryInfo>();
-                DirectoryInfo directoryInfo1 = new DirectoryInfo(directoryInfo.FullName);
-                directoryInfoList.Add(directoryInfo1);
+                UpdatePresent(directoryInfo);
 
-                while (true)
-                {
-                    if (directoryInfo1.Parent == null)
-                    {
-                        break;
-                    }
-                    else if (directoryInfo1.Parent.Exists == true)
-                    {
-                        directoryInfo1 = directoryInfo1.Parent;
-                        directoryInfoList.Add(directoryInfo1);
-                    }
-                    else
-                        break;
-                }
-
-                directoryInfoList.Reverse();
-
-                foreach (DirectoryInfo directoryInfo2 in directoryInfoList)
-                {
-                    Button button1 = new Button();
-                    button1.BorderThickness = new Thickness(0);
-                    button1.Padding = new Thickness(5);
-                    button1.Content = directoryInfo2.Name;
-                    button1.Tag = directoryInfo2.FullName;
-                    button1.MouseDoubleClick += DoubleClick_ScreenImage;
-                    path.Children.Add(button1);
-                }
             }
             catch (Exception ex)
             {
@@ -457,7 +237,7 @@ namespace FileExplorer
             }
         }
 
-        // 파일 실행
+        // 파일 실행 이벤트
         private void DoubleClick_ScreenImage_File(object sender, RoutedEventArgs e)
         {
             try
@@ -480,111 +260,26 @@ namespace FileExplorer
                 if (searchForName.IsChecked == true)
                 {
 
+
+                    // 이름으로 검색
+                    
                 }
                 else if (searchForPath.IsChecked == true)
                 {
-                    SavePresentState();
+                    SavePresent();
 
+                    // 경로로 검색
                     string searchWord = searchBox.Text;
                     DirectoryInfo directoryInfo = new DirectoryInfo(searchWord);
-                    DirectoryInfo[] childrenDI = directoryInfo.GetDirectories(); // 하위 디렉토리 불러오기
 
-                    screen.Children.Clear();
-                    int NumOfContents = 0;
-                    // 폴더
-                    foreach (DirectoryInfo childDI in childrenDI)
-                    {
-                        if ((childDI.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)  // 숨겨진 파일 아닌 것만 
-                        {
-                            WrapPanel wrapPanel = new WrapPanel();
-                            wrapPanel.Width = 100;
-                            wrapPanel.Height = 100;
-
-                            Button button = new Button();
-                            button.Background = new ImageBrush(new BitmapImage(new Uri("C:\\Users\\kimji\\source\\repos\\FileExplorer\\Asset\\folder.png")));
-                            button.BorderThickness = new Thickness(0);
-                            button.Height = 60;
-                            button.Width = 60;
-                            button.Tag = childDI.FullName;
-                            button.MouseDoubleClick += DoubleClick_ScreenImage;
-                            wrapPanel.Children.Add(button);
-
-                            TextBlock textBlock = new TextBlock();
-                            textBlock.Text = childDI.Name;
-                            textBlock.TextWrapping = TextWrapping.Wrap;
-                            textBlock.Width = 90;
-                            wrapPanel.Children.Add(textBlock);
-
-                            screen.Children.Add(wrapPanel);
-
-                        }
-                    }
-
-                    // 파일
-                    string[] files = Directory.GetFiles(directoryInfo.FullName, "*");
-                    foreach (string file in files)
-                    {
-                        WrapPanel wrapPanel = new WrapPanel();
-                        wrapPanel.Width = 100;
-                        wrapPanel.Height = 100;
-
-                        Button button = new Button();
-                        button.Background = new ImageBrush(GetFileImage(file));
-                        button.BorderThickness = new Thickness(0);
-                        button.Height = 60;
-                        button.Width = 60;
-                        button.Tag = file;
-                        button.MouseDoubleClick += DoubleClick_ScreenImage_File;
-                        wrapPanel.Children.Add(button);
-
-                        TextBlock textBlock = new TextBlock();
-                        string fileName = (file.Replace(directoryInfo.FullName, "")).Replace("\\", "");  // 파일 전체 경로에서 파일 이름만 따오기
-                        textBlock.Text = fileName;
-                        textBlock.TextWrapping = TextWrapping.Wrap;
-                        textBlock.Width = 90;
-                        wrapPanel.Children.Add(textBlock);
-                        screen.Children.Add(wrapPanel);
-                    }
-
-                    NumOfContents = childrenDI.Length + files.Length;
-                    showNum.Text = NumOfContents.ToString() + "개 항목";
+                    // screen에 폴더, 파일 표시하기
+                    ShowScreen(directoryInfo);
 
                     // 경로 표시하기
-                    path.Children.Clear();
+                    ShowPath(directoryInfo);
 
-                    List<DirectoryInfo> directoryInfoList = new List<DirectoryInfo>();
-                    DirectoryInfo directoryInfo1 = new DirectoryInfo(directoryInfo.FullName);
-                    directoryInfoList.Add(directoryInfo1);
+                    UpdatePresent(directoryInfo);
 
-                    while (true)
-                    {
-                        if (directoryInfo1.Parent == null)
-                        {
-                            break;
-                        }
-                        else if (directoryInfo1.Parent.Exists == true)
-                        {
-                            directoryInfo1 = directoryInfo1.Parent;
-                            directoryInfoList.Add(directoryInfo1);
-                        }
-                        else
-                            break;
-                    }
-
-                    directoryInfoList.Reverse();
-
-                    foreach (DirectoryInfo directoryInfo2 in directoryInfoList)
-                    {
-                        Button button1 = new Button();
-                        button1.BorderThickness = new Thickness(0);
-                        button1.Padding = new Thickness(5);
-                        button1.Content = directoryInfo2.Name;
-                        button1.Tag = directoryInfo2.FullName;
-                        button1.MouseDoubleClick += DoubleClick_ScreenImage;
-                        path.Children.Add(button1);
-                    }
-
-                    UpdatePresentState();
                 }
                 else
                 { }
@@ -606,10 +301,117 @@ namespace FileExplorer
             return imageSource;
         }
 
+        // screen에 폴더, 파일 표시하기
+        private void ShowScreen(DirectoryInfo directoryInfo)
+        {
+            DirectoryInfo[] childrenDI = directoryInfo.GetDirectories(); // 하위 디렉토리 불러오기
+
+            screen.Children.Clear();
+            int NumOfContents = 0;
+
+            // 폴더
+            foreach (DirectoryInfo childDI in childrenDI)
+            {
+                if ((childDI.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)  // 숨겨진 파일 아닌 것만 
+                {
+                    WrapPanel wrapPanel = new WrapPanel();
+                    wrapPanel.Width = 100;
+                    wrapPanel.Height = 100;
+
+                    Button button = new Button();
+                    button.Background = new ImageBrush(new BitmapImage(new Uri("C:\\Users\\kimji\\source\\repos\\FileExplorer\\Asset\\folder.png")));
+                    button.BorderThickness = new Thickness(0);
+                    button.Height = 60;
+                    button.Width = 60;
+                    button.Tag = childDI.FullName;
+                    button.MouseDoubleClick += DoubleClick_ScreenImage;
+                    wrapPanel.Children.Add(button);
+
+                    TextBlock textBlock = new TextBlock();
+                    textBlock.Text = childDI.Name;
+                    textBlock.TextWrapping = TextWrapping.Wrap;
+                    textBlock.Width = 90;
+                    wrapPanel.Children.Add(textBlock);
+
+                    screen.Children.Add(wrapPanel);
+
+                }
+
+            }
+
+            // 파일
+            string[] files = Directory.GetFiles(directoryInfo.FullName, "*");
+            foreach (string file in files)
+            {
+                WrapPanel wrapPanel = new WrapPanel();
+                wrapPanel.Width = 100;
+                wrapPanel.Height = 100;
+
+                Button button = new Button();
+                button.Background = new ImageBrush(GetFileImage(file));
+                button.BorderThickness = new Thickness(0);
+                button.Height = 60;
+                button.Width = 60;
+                button.Tag = file;
+                button.MouseDoubleClick += DoubleClick_ScreenImage_File;
+                wrapPanel.Children.Add(button);
+
+                TextBlock textBlock = new TextBlock();
+                string fileName = (file.Replace(directoryInfo.FullName, "")).Replace("\\", "");  // 파일 전체 경로에서 파일 이름만 따오기
+                textBlock.Text = fileName;
+                textBlock.TextWrapping = TextWrapping.Wrap;
+                textBlock.Width = 90;
+                wrapPanel.Children.Add(textBlock);
+                screen.Children.Add(wrapPanel);
+            }
+
+            // 항목 개수 표시하기
+            NumOfContents = childrenDI.Length + files.Length;
+            showNum.Text = NumOfContents.ToString() + "개 항목";
+        }
+
+        // path에 경로 버튼 표시하기
+        private void ShowPath(DirectoryInfo directoryInfo)
+        {
+            path.Children.Clear();
+
+            List<DirectoryInfo> directoryInfoList = new List<DirectoryInfo>();
+            DirectoryInfo directoryInfo1 = new DirectoryInfo(directoryInfo.FullName);
+            directoryInfoList.Add(directoryInfo1);
+
+            while (true)
+            {
+                if (directoryInfo1.Parent == null)
+                {
+                    break;
+                }
+                else if (directoryInfo1.Parent.Exists == true)
+                {
+                    directoryInfo1 = directoryInfo1.Parent;
+                    directoryInfoList.Add(directoryInfo1);
+                }
+                else
+                    break;
+            }
+
+            directoryInfoList.Reverse();
+
+            foreach (DirectoryInfo directoryInfo2 in directoryInfoList)
+            {
+                Button button1 = new Button();
+                button1.BorderThickness = new Thickness(0);
+                button1.Padding = new Thickness(5);
+                button1.Content = directoryInfo2.Name + " >";
+                button1.Tag = directoryInfo2.FullName;
+                button1.MouseDoubleClick += DoubleClick_ScreenImage;
+                path.Children.Add(button1);
+            }
+        }
+
         // 스택 체크하고 뒤로, 앞으로 가기 버튼 활성화
         private void CheckStack()
         {
-            if (backwardStack_Nav.Count > 0)
+            if (backwardStack.Count > 0)
             {
                 backward.IsEnabled = true;
             }
@@ -618,7 +420,7 @@ namespace FileExplorer
                 backward.IsEnabled = false;
             }
 
-            if (forwardStack_Nav.Count > 0)
+            if (forwardStack.Count > 0)
             {
                 forward.IsEnabled = true;
             }
@@ -628,55 +430,47 @@ namespace FileExplorer
             }
         }
         
-        // 현재 상태를 스택에 업데이트하고 초기화
-        private void SavePresentState()
+        // nav, screen, path 클릭할 때 backwardStack에 저장
+        private void SavePresent()
         {
-            if (presentNav != null)
+            // 현재상태였던 걸 backwardStack에 저장
+            if (presentDirectoryInfo != null)
             {
-                backwardStack_Nav.Push(presentNav);
-                presentNav.Clear();
+                // 뒤로 가기에 이미 저장되어 있으면 저장하지 않음
+                if (backwardStack.Count > 0)
+                {
+                    DirectoryInfo directoryInfo = backwardStack.Peek();
+                    if (presentDirectoryInfo.FullName != directoryInfo.FullName)
+                    {
+                        backwardStack.Push(presentDirectoryInfo);
+                        presentDirectoryInfo = null;
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else
+                {
+                    backwardStack.Push(presentDirectoryInfo);
+                    presentDirectoryInfo = null;
+                }
+                
             }
 
-            if (presentScreen != null)
-            {
-                backwardStack_Screen.Push(presentScreen);
-                presentScreen.Clear();
-            }
+            // forwardStack 초기화
+            forwardStack.Clear();
 
-            if (presentPath != null)
-            {
-                backWardStack_Path.Push(presentPath);
-                presentPath.Clear();
-            }
+            // 뒤로 가기, 앞으로 가기 버튼 활성화, 비활성화
+            CheckStack();
         }
 
         // 현재 상태를 변수에 저장
-        private void UpdatePresentState()
+        private void UpdatePresent(DirectoryInfo directoryInfo)
         {
-            foreach (TreeViewItem treeViewItem in nav.Items)
-            {
-                if (treeViewItem != null)
-                {
-                    presentNav.Add(treeViewItem);
-                }
-            }
+            presentDirectoryInfo = directoryInfo;
 
-            foreach (WrapPanel wrapPanel in screen.Children)
-            {
-                if (wrapPanel != null)
-                {
-                    presentScreen.Add(wrapPanel);
-                }
-            }
-
-            foreach (Button button in path.Children)
-            {
-                if (button != null)
-                {
-                    presentPath.Add(button);
-                }
-            }
-
+            // 뒤로 가기, 앞으로 가기 버튼 활성화, 비활성화
             CheckStack();
         }
     }

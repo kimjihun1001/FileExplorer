@@ -27,6 +27,8 @@
         <RadioButton x:Name="searchForName" GroupName="searchOption" Content="이름으로 검색" HorizontalAlignment="Left" Height="15" Margin="32,30,0,0" VerticalAlignment="Top" Width="148"/>
         <Button x:Name="backward" IsEnabled="False" Click="Click_Backward" Content="뒤" HorizontalAlignment="Left" Height="28" Margin="32,56,0,0" VerticalAlignment="Top" Width="30"/>
         <Button x:Name="forward" IsEnabled="False" Click="Click_Forward" Content="앞" HorizontalAlignment="Left" Height="28" Margin="70,56,0,0" VerticalAlignment="Top" Width="30"/>
+        <Button Content="크게보기" HorizontalAlignment="Left" Height="30" Margin="672,414,0,0" VerticalAlignment="Top" Width="55" Click="ChangeToBasicView"/>
+        <Button Content="작게보기" HorizontalAlignment="Left" Height="30" Margin="609,414,0,0" VerticalAlignment="Top" Width="55" Click="ChangeToDetailView"/>
 
     </Grid>
 </Window>

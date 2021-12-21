@@ -41,6 +41,12 @@ namespace FileExplorer
             {
                 if (presentDirectoryInfo != null)
                 {
+                    if (presentDirectoryInfo.FullName == backwardStack.Peek().FullName)
+                    {
+                        // backwardStack에 있는 거 하나 없애기
+                        backwardStack.Pop();
+                    }
+
                     // 현재 상태를 forwardStack에 저장
                     forwardStack.Push(presentDirectoryInfo);
 
@@ -191,10 +197,11 @@ namespace FileExplorer
         private void Click_TreeViewItem(object sender, RoutedEventArgs e)
         {
             try
-            {                
+            {
+                TreeViewItem treeViewItem = (TreeViewItem)e.Source;
+
                 SavePresent();
 
-                TreeViewItem treeViewItem = (TreeViewItem)e.Source;
                 DirectoryInfo directoryInfo = new DirectoryInfo(treeViewItem.Tag.ToString());
 
                 // screen에 폴더, 파일 표시하기
@@ -259,10 +266,86 @@ namespace FileExplorer
             {
                 if (searchForName.IsChecked == true)
                 {
+                    if (presentDirectoryInfo == null)
+                    {
+                        presentDirectoryInfo = new DirectoryInfo("C:\\");
+                    }
 
+                    screen.Children.Clear();
 
                     // 이름으로 검색
-                    
+                    string searchWord = searchBox.Text;
+
+                    // 폴더
+                    DirectoryInfo[] childrenDI = presentDirectoryInfo.GetDirectories();
+
+                    foreach (DirectoryInfo childDI in childrenDI)
+                    {
+                        if ((childDI.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)  // 숨겨진 폴더 아닌 것만 
+                        {
+                            if (childDI.Name.Contains(searchWord))
+                            {
+                                WrapPanel wrapPanel = new WrapPanel();
+                                wrapPanel.Width = 100;
+                                wrapPanel.Height = 100;
+
+                                Button button = new Button();
+                                button.Background = new ImageBrush(new BitmapImage(new Uri("C:\\Users\\kimji\\source\\repos\\FileExplorer\\Asset\\folder.png")));
+                                button.BorderThickness = new Thickness(0);
+                                button.Height = 60;
+                                button.Width = 60;
+                                button.Tag = childDI.FullName;
+                                button.MouseDoubleClick += DoubleClick_ScreenImage;
+                                wrapPanel.Children.Add(button);
+
+                                TextBlock textBlock = new TextBlock();
+                                textBlock.Text = childDI.Name;
+                                textBlock.TextWrapping = TextWrapping.Wrap;
+                                textBlock.Width = 90;
+                                wrapPanel.Children.Add(textBlock);
+
+                                screen.Children.Add(wrapPanel);
+                            }
+                        }
+
+                    }
+
+                    // 파일
+                    string[] files = Directory.GetFiles(presentDirectoryInfo.FullName, "*", SearchOption.TopDirectoryOnly);
+
+                    foreach (string file in files)
+                    {
+                        string fileName = (file.Replace(presentDirectoryInfo.FullName, "")).Replace("\\", "");  // 파일 전체 경로에서 파일 이름만 따오기
+
+                        if (fileName.Contains(searchWord))
+                        {
+                            WrapPanel wrapPanel = new WrapPanel();
+                            wrapPanel.Width = 100;
+                            wrapPanel.Height = 100;
+
+                            Button button = new Button();
+                            button.Background = new ImageBrush(GetFileImage(file));
+                            button.BorderThickness = new Thickness(0);
+                            button.Height = 60;
+                            button.Width = 60;
+                            button.Tag = file;
+                            button.MouseDoubleClick += DoubleClick_ScreenImage_File;
+                            wrapPanel.Children.Add(button);
+
+                            TextBlock textBlock = new TextBlock();
+                            textBlock.Text = fileName;
+                            textBlock.TextWrapping = TextWrapping.Wrap;
+                            textBlock.Width = 90;
+                            wrapPanel.Children.Add(textBlock);
+                            screen.Children.Add(wrapPanel);
+                        }
+                        
+                    }
+
+                    // 항목 개수 표시하기
+                    int NumOfContents = files.Length;
+                    showNum.Text = NumOfContents.ToString() + "개 항목";
+
                 }
                 else if (searchForPath.IsChecked == true)
                 {
@@ -290,6 +373,16 @@ namespace FileExplorer
                 MessageBox.Show("검색 결과가 없습니다.");
                 Console.WriteLine(ex.Message);
             }
+        }
+
+        private void ChangeToDetailView(object sender, RoutedEventArgs e)
+        {
+            ShowScreen_DetailView(presentDirectoryInfo);
+        }
+
+        private void ChangeToBasicView(object sender, RoutedEventArgs e)
+        {
+            ShowScreen(presentDirectoryInfo);
         }
 
         private ImageSource GetFileImage(string filePath)
@@ -368,6 +461,140 @@ namespace FileExplorer
             // 항목 개수 표시하기
             NumOfContents = childrenDI.Length + files.Length;
             showNum.Text = NumOfContents.ToString() + "개 항목";
+        }
+
+        // screen에 폴더, 파일 표시하기
+        private void ShowScreen_DetailView(DirectoryInfo directoryInfo)
+        {
+            DirectoryInfo[] childrenDI = directoryInfo.GetDirectories(); // 하위 디렉토리 불러오기
+
+            screen.Children.Clear();
+
+            // 테이블 항목
+            WrapPanel wrapPanel = new WrapPanel();
+            wrapPanel.Width = 480;
+            wrapPanel.Height = 50;
+
+            TextBlock textBlock = new TextBlock();
+            textBlock.Text = "";
+            textBlock.Width = 50;
+            wrapPanel.Children.Add(textBlock);
+
+            TextBlock block_name = new TextBlock();
+            block_name.Text = "파일 이름 | ";
+            block_name.TextAlignment = TextAlignment.Right;
+            block_name.Width = 180;
+            wrapPanel.Children.Add(block_name);
+
+            TextBlock block_date = new TextBlock();
+            block_date.Text = "생성 날짜 | ";
+            block_date.TextAlignment = TextAlignment.Right;
+            block_date.Width = 100;
+            wrapPanel.Children.Add(block_date);
+
+            TextBlock block_size = new TextBlock();
+            block_size.Text ="파일 크기 | ";
+            block_size.TextAlignment = TextAlignment.Right;
+            block_size.Width = 100;
+            wrapPanel.Children.Add(block_size);
+
+            screen.Children.Add(wrapPanel);
+
+            // 폴더
+            foreach (DirectoryInfo childDI in childrenDI)
+            {
+                if ((childDI.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)  // 숨겨진 파일 아닌 것만 
+                {
+                    WrapPanel wrapPanel2 = new WrapPanel();
+                    wrapPanel2.Width = 480;
+                    wrapPanel2.Height = 50;
+
+                    Button button = new Button();
+                    button.Background = new ImageBrush(new BitmapImage(new Uri("C:\\Users\\kimji\\source\\repos\\FileExplorer\\Asset\\folder.png")));
+                    button.BorderThickness = new Thickness(0);
+                    button.Height = 50;
+                    button.Width = 50;
+                    button.Tag = childDI.FullName;
+                    button.MouseDoubleClick += DoubleClick_ScreenImage;
+                    wrapPanel2.Children.Add(button);
+
+                    TextBlock block_name2 = new TextBlock();
+                    block_name2.Text = childDI.Name;
+                    block_name2.TextAlignment = TextAlignment.Right;
+                    block_name2.TextWrapping = TextWrapping.Wrap;
+                    block_name2.Width = 180;
+                    wrapPanel2.Children.Add(block_name2);
+
+                    TextBlock block_date2 = new TextBlock();
+                    block_date2.Text = childDI.CreationTime.ToString();
+                    block_date2.TextAlignment = TextAlignment.Right;
+                    block_date2.TextWrapping = TextWrapping.Wrap;
+                    block_date2.Width = 100;
+                    wrapPanel2.Children.Add(block_date2);
+
+                    screen.Children.Add(wrapPanel2);
+
+                }
+
+            }
+
+            // 파일
+            FileInfo[] fileInfoList = directoryInfo.GetFiles("*");
+            foreach (FileInfo fileInfo in fileInfoList)
+            {
+                WrapPanel wrapPanel3 = new WrapPanel();
+                wrapPanel3.Width = 500;
+                wrapPanel3.Height = 50;
+
+                Button button = new Button();
+                button.Background = new ImageBrush(GetFileImage(fileInfo.FullName));
+                button.BorderThickness = new Thickness(0);
+                button.Height = 50;
+                button.Width = 50;
+                button.Tag = fileInfo.FullName;
+                button.MouseDoubleClick += DoubleClick_ScreenImage_File;
+                wrapPanel3.Children.Add(button);
+
+                TextBlock block_name3 = new TextBlock();
+                block_name3.Text = fileInfo.Name;
+                block_name3.TextAlignment = TextAlignment.Right;
+                block_name3.TextWrapping = TextWrapping.Wrap;
+                block_name3.Width = 200;
+                wrapPanel3.Children.Add(block_name3);
+
+                TextBlock block_date3 = new TextBlock();
+                block_date3.Text = fileInfo.CreationTime.ToString();
+                block_date3.TextAlignment = TextAlignment.Right;
+                block_date3.TextWrapping = TextWrapping.Wrap;
+                block_date3.Width = 100;
+                wrapPanel3.Children.Add(block_date3);
+
+                TextBlock block_size3 = new TextBlock();
+                string fileSize = "";
+                if (fileInfo.Length > 1024 * 1024)
+                {
+                    fileSize = (fileInfo.Length / 1024 * 1024 * 1024).ToString() + "GB";
+                }
+                else if (fileInfo.Length > 1024 * 1024)
+                {
+                    fileSize = (fileInfo.Length / 1024 * 1024).ToString() + "MB";
+                }
+                else if (fileInfo.Length > 1024)
+                {
+                    fileSize = (fileInfo.Length / 1024).ToString() + "KB";
+                }
+                else
+                {
+                    fileSize = fileInfo.Length.ToString();
+                }
+                block_size3.Text = fileSize;
+                block_size3.TextWrapping = TextWrapping.Wrap;
+                block_size3.TextAlignment = TextAlignment.Right;
+                block_size3.Width = 100;
+                wrapPanel3.Children.Add(block_size3);
+
+                screen.Children.Add(wrapPanel3);
+            }
         }
 
         // path에 경로 버튼 표시하기

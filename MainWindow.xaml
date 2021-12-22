@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="500" Width="800">
     <Grid>
-        <TreeView x:Name="nav" Height="300" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150" Margin="32,99,0,0">
+        <TreeView x:Name="nav" Height="200" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150" Margin="32,199,0,0">
 
         </TreeView>
         <ScrollViewer HorizontalAlignment="Left" Height="300" Margin="208,99,0,0" VerticalAlignment="Top" Width="520">
@@ -29,6 +29,12 @@
         <Button x:Name="forward" IsEnabled="False" Click="Click_Forward" Content="앞" HorizontalAlignment="Left" Height="28" Margin="70,56,0,0" VerticalAlignment="Top" Width="30"/>
         <Button Content="크게보기" HorizontalAlignment="Left" Height="30" Margin="672,414,0,0" VerticalAlignment="Top" Width="55" Click="ChangeToBasicView"/>
         <Button Content="작게보기" HorizontalAlignment="Left" Height="30" Margin="609,414,0,0" VerticalAlignment="Top" Width="55" Click="ChangeToDetailView"/>
+        <TextBlock Text="★ 즐겨찾기 ★" TextAlignment="Center" Width="130" Height="20" Margin="32,92,638,372"></TextBlock>
+        <ScrollViewer HorizontalAlignment="Left" Height="75" Margin="32,119,0,0" VerticalAlignment="Top" Width="150">
+            <WrapPanel Name="favorites">
+            </WrapPanel>
+        </ScrollViewer>
+        <Button Content="★" Click="Click_AddFavorite" HorizontalAlignment="Left" BorderThickness="0" Background="LightGoldenrodYellow" Height="30" Margin="571,414,0,0" VerticalAlignment="Top" Width="30"/>
 
     </Grid>
 </Window>

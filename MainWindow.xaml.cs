@@ -27,6 +27,7 @@ namespace FileExplorer
         
         public static Stack<DirectoryInfo> forwardStack = new Stack<DirectoryInfo>();
 
+        public static List<DirectoryInfo> favoriteList = new List<DirectoryInfo>();
 
         public MainWindow()
         {
@@ -383,6 +384,85 @@ namespace FileExplorer
         private void ChangeToBasicView(object sender, RoutedEventArgs e)
         {
             ShowScreen(presentDirectoryInfo);
+        }
+
+        private void Click_AddFavorite(object sender, RoutedEventArgs e)
+        {
+            AddToFavoriteList();
+            ShowFavorites();
+        }
+
+        private void Click_DeleteFavorite(object sender, RoutedEventArgs e)
+        {
+            Button button = sender as Button;
+            foreach (DirectoryInfo favorite in favoriteList)
+            {
+                if (favorite.FullName == button.Tag.ToString())
+                {
+                    favoriteList.Remove(favorite);
+                    ShowFavorites();
+                }
+
+                if (favoriteList.Count == 0)
+                    break;
+            }
+        }
+
+        private void AddToFavoriteList()
+        {
+            if (presentDirectoryInfo != null)
+            {
+                if (favoriteList.Contains(presentDirectoryInfo))
+                {
+                    MessageBox.Show("이미 즐겨찾기에 추가되어 있습니다");
+                }
+                else
+                {
+                    favoriteList.Add(presentDirectoryInfo);
+                    MessageBox.Show("즐겨찾기에 추가했습니다");
+                }
+            }
+            else
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo("C:\\");
+                if (favoriteList.Contains(directoryInfo))
+                {
+                    MessageBox.Show("이미 즐겨찾기에 추가되어 있습니다");
+                }
+                else
+                {
+                    favoriteList.Add(directoryInfo);
+                    MessageBox.Show("즐겨찾기에 추가했습니다");
+                }
+            }
+            
+        }
+
+        private void ShowFavorites()
+        {
+            favorites.Children.Clear();
+
+            if (favoriteList.Count > 0)
+            {
+                foreach (DirectoryInfo favorite in favoriteList)
+                {
+                    Button button = new Button();
+                    button.Content = favorite.Name;
+                    button.Tag = favorite.FullName;
+                    button.Height = 20;
+                    button.Width = 110;
+                    button.Click += DoubleClick_ScreenImage;
+                    favorites.Children.Add(button);
+
+                    Button button_delete = new Button();
+                    button_delete.Content = "X";
+                    button_delete.Tag = favorite.FullName;
+                    button_delete.Height = 20;
+                    button_delete.Width = 20;
+                    button_delete.Click += Click_DeleteFavorite;
+                    favorites.Children.Add(button_delete);
+                }
+            }
         }
 
         private ImageSource GetFileImage(string filePath)

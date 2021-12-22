@@ -401,10 +401,11 @@ namespace FileExplorer
                 {
                     favoriteList.Remove(favorite);
                     ShowFavorites();
+                    // break를 안 걸어주면 list에 변동이 생겼기 때문에 foreach에서 오류 발생!!
+                    break;
+                    // 여러 개를 지우려면 foreach 안에서 지우면 안됨. 체크해뒀다가 밖에서 지우기
                 }
 
-                if (favoriteList.Count == 0)
-                    break;
             }
         }
 
@@ -651,13 +652,13 @@ namespace FileExplorer
 
                 TextBlock block_size3 = new TextBlock();
                 string fileSize = "";
-                if (fileInfo.Length > 1024 * 1024)
+                if (fileInfo.Length > (1024 * 1024 * 1024))
                 {
-                    fileSize = (fileInfo.Length / 1024 * 1024 * 1024).ToString() + "GB";
+                    fileSize = (fileInfo.Length / (1024 * 1024 * 1024)).ToString() + "GB";
                 }
-                else if (fileInfo.Length > 1024 * 1024)
+                else if (fileInfo.Length > (1024 * 1024))
                 {
-                    fileSize = (fileInfo.Length / 1024 * 1024).ToString() + "MB";
+                    fileSize = (fileInfo.Length / (1024 * 1024)).ToString() + "MB";
                 }
                 else if (fileInfo.Length > 1024)
                 {
